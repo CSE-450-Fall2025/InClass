@@ -16,13 +16,19 @@ private:
   std::map<std::string, int> symbols;  // From var name to value.
 
   int GetTokenValue(Token token) {
-    // MAKE SURE IT EXISTS
     if (token == Lexer::ID_ID) {
+      if (!symbols.contains(token.lexeme)) {
+        std::cerr << "Unknown variable '" << token.lexeme << "'.\n";
+        exit(1);
+      }
       return symbols[token.lexeme];
     }
     if (token == Lexer::ID_NUMBER) {
       return std::stoi(token.lexeme);
     }
+    std::cerr << "Unexpected token '" << token.lexeme << '\n';
+    exit(1);
+    return 0;
   }
 
   void ProcessVar() {
@@ -37,6 +43,12 @@ private:
     symbols[var_name] = value;
   }
 
+  void ProcessPrint() {
+    lexer.Use(Lexer::ID_PRINT, "Internal Compiler Error!");
+    auto token = lexer.Use();
+    std::cout << GetTokenValue(token) << std::endl;
+  }
+
   void ProcessLine() {
     auto token = lexer.Peek();
     switch (token) {
@@ -44,12 +56,6 @@ private:
       case Lexer::ID_PRINT: ProcessPrint(); break;
       default: lexer.Error("Unknown token '", token.lexeme, "'.");
     }
-  }
-
-  void ProcessPrint() {
-    lexer.Use();
-    auto token = lexer.Use();
-    std::cout << GetTokenValue(token) << std::endl;
   }
 
 public:
