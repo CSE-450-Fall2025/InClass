@@ -8,20 +8,53 @@
 using emplex::Lexer;
 using emplex::Token;
 
+class SymbolTable {
+private:
+  struct VarInfo {
+    int value;
+    int def_line;
+  };
+
+  std::map<std::string, VarInfo> symbols;  // From var name to value.
+public:
+  void AddSymbol(Token token) {
+    if (symbols.contains(token.lexeme)) {
+      std::cerr << "ERROR (line " << token.line_id << "): "
+        << "Redeclaration of variable '"
+        << token.lexeme << "'.\n"
+        << "Originally defined on line " << symbols[token.lexeme].def_line << ".\n";
+      exit(1);
+    }
+    symbols[token.lexeme].value = 0;
+    symbols[token.lexeme].def_line = token.line_id;
+  }
+
+  [[nodiscard]] int GetSymbolValue(std::string name) {
+    if (!symbols.contains(name)) {
+      std::cerr << "Unknown variable '" << name << "'.\n";
+      exit(1);
+    }
+    return symbols[name].value;
+  }
+
+  void SetSymbol(std::string name, int value) {
+    if (!symbols.contains(name)) {
+      std::cerr << "Unknown variable '" << name << "'.\n";
+      exit(1);
+    }
+    symbols[name].value = value;
+  }
+};
+
 class SimpleLang {
 private:
   std::string filename;
   Lexer lexer;
-
-  std::map<std::string, int> symbols;  // From var name to value.
+  SymbolTable symbols;
 
   int GetTokenValue(Token token) {
     if (token == Lexer::ID_ID) {
-      if (!symbols.contains(token.lexeme)) {
-        std::cerr << "Unknown variable '" << token.lexeme << "'.\n";
-        exit(1);
-      }
-      return symbols[token.lexeme];
+      return symbols.GetSymbolValue(token.lexeme);
     }
     if (token == Lexer::ID_NUMBER) {
       return std::stoi(token.lexeme);
@@ -35,12 +68,10 @@ private:
     lexer.Use(Lexer::ID_VAR, "Internal Compiler Error!");
     Token id_token = lexer.Use(Lexer::ID_ID);
     std::string var_name = id_token.lexeme;
-    if (symbols.contains(var_name)) {
-      lexer.Error("Redeclaration of variable '", var_name, "'.");
-    }
+    symbols.AddSymbol(id_token);
     lexer.Use('=');
     int value = GetTokenValue(lexer.Use());
-    symbols[var_name] = value;
+    symbols.SetSymbol(var_name, value);
   }
 
   void ProcessPrint() {
@@ -54,8 +85,10 @@ private:
     switch (token) {
       case Lexer::ID_VAR: ProcessVar(); break;
       case Lexer::ID_PRINT: ProcessPrint(); break;
+      case ';': break;
       default: lexer.Error("Unknown token '", token.lexeme, "'.");
     }
+    lexer.Use(';');
   }
 
 public:
