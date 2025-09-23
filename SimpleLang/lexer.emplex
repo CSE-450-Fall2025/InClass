@@ -9,12 +9,13 @@
 :name_space emplex
 :use_token_lexemes 1
 :use_token_line_num 1
-:use_token_column 1
+:use_token_column 0
 
 # Token names and regular expressions
 VAR var
 PRINT print
 ID [a-zA-Z_][a-zA-Z0-9_]*
 NUMBER [0-9]+
+OP [-+*/%&|]|"=="|"!="|"**"|([<>]=?)|"&&"|"||"
 -WHITESPACE [ \n\r\t]
 -COMMENT \#.*
