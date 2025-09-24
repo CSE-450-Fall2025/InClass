@@ -1,16 +1,13 @@
-var x = 333;
+print 6 * 7;
+print 100 * 2 ** 3;
+print 6 * 12 / 4;
 
+var value = 7;
 
-;
-;
-;
-;
+var result = (value-1) * value + 10 * 20 - (value+1)**2 + 1 ;
+print result;
 
-
-var x = 400;
-print
-  x;
-
-;
-
-print 43;
+#var x = 333;
+# x = 400 * x + 2;
+#print x;
+#print 43;
