@@ -63,6 +63,28 @@ public:
     return std::stoi(token.lexeme);
   }
 
+  int Run_Op(SymbolTable & symbols) {
+    assert(children.size() == 2);
+    int val1 = children[0].Run(symbols);
+    int val2 = children[1].Run(symbols);
+
+    if (token.lexeme == "+") return val1 + val2;
+    if (token.lexeme == "-") return val1 - val2;
+    if (token.lexeme == "*") return val1 * val2;
+    if (token.lexeme == "/") {
+      if (val2 == 0) {
+        std::cerr << "Division by zero error on line " << token.line_id << std::endl;
+        exit(1);
+      }
+      return val1 / val2;
+    }
+    if (token.lexeme == "**") return std::pow(val1, val2);
+
+    std::cerr << "Unknown binary operator '" << token.lexeme << "'.\n";
+    exit(1);
+    return 0; // Never gets here.
+  }
+
   int Run_Print(SymbolTable & symbols) {
     for (ASTNode & child : children) std::cout << child.Run(symbols) << std::endl;
     return 0;
@@ -78,6 +100,7 @@ public:
     case '=': return Run_Assign(symbols);
     case Lexer::ID_ID: return Run_Variable(symbols);
     case Lexer::ID_NUMBER: return Run_Number(symbols);
+    case Lexer::ID_OP: return Run_Op(symbols);
     case Lexer::ID_PRINT: return Run_Print(symbols);
     }
 
