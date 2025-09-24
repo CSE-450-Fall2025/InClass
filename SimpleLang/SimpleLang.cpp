@@ -30,59 +30,85 @@ private:
     return 0;
   }
 
-  // void ProcessVar() {
-  //   lexer.Use(Lexer::ID_VAR, "Internal Compiler Error!");
-  //   Token id_token = lexer.Use(Lexer::ID_ID);
-  //   std::string var_name = id_token.lexeme;
-  //   symbols.AddSymbol(id_token);
-  //   lexer.Use('=');
-  //   int value = GetTokenValue(lexer.Use());
-  //   symbols.SetSymbol(var_name, value);
-  // }
-
-  // void ProcessPrint() {
-  //   lexer.Use(Lexer::ID_PRINT, "Internal Compiler Error!");
-  //   auto token = lexer.Use();
-  //   std::cout << GetTokenValue(token) << std::endl;
-  // }
-
-  // void ProcessLine() {
-  //   auto token = lexer.Peek();
-  //   switch (token) {
-  //     case Lexer::ID_VAR: ProcessVar(); break;
-  //     case Lexer::ID_PRINT: ProcessPrint(); break;
-  //     case ';': break;
-  //     default: lexer.Error("Unknown token '", token.lexeme, "'.");
-  //   }
-  //   lexer.Use(';');
-  // }
-
   ASTNode Parse_Term() {
-    int next_token = lexer.Peek();
+    Token next_token = lexer.Peek();
     switch (next_token) {
     case Lexer::ID_ID:
       return ASTNode(lexer.Use());
     case Lexer::ID_NUMBER:
       return ASTNode(lexer.Use());
+    case '(': {
+      lexer.Use('(');
+      ASTNode result = Parse_Expression();
+      lexer.Use(')');
+      return result;
+    }
     default:
-      lexer.Error("Unexpected Token");
+      lexer.Error("Unexpected Token: '", next_token.lexeme, "'");
     }
 
     // SHOULD NEVER GET HERE!
     return ASTNode(Token{Lexer::ID__EOF_, "ERROR", 0});
   }
 
-  ASTNode Parse_Expression() {
-    ASTNode expr_node = Parse_Term();
+  ASTNode Parse_Expr3() {
+    ASTNode lhs = Parse_Expr2();
+    return Parse_Expr3(lhs);
+  }
 
-    if (lexer.Peek() == Lexer::ID_OP) {
-      Token op_token = lexer.Use();
-      ASTNode term2 = Parse_Term();
-      expr_node = ASTNode(op_token, expr_node, term2);
+  ASTNode Parse_Expr3(ASTNode lhs) {
+    if (lexer.Peek().lexeme == "+" || lexer.Peek().lexeme == "-") {
+      Token op_token = lexer.Use(Lexer::ID_OP);
+      ASTNode rhs = Parse_Expr2();
+      lhs = ASTNode{op_token, lhs, rhs};
+
+      lhs = Parse_Expr3(lhs);
     }
 
-    return expr_node;
+    return lhs;
   }
+
+  ASTNode Parse_Expr2() {
+    ASTNode lhs = Parse_Expr1();
+    return Parse_Expr2(lhs);
+  }
+
+  ASTNode Parse_Expr2(ASTNode lhs) {
+    if (lexer.Peek().lexeme == "*" || lexer.Peek().lexeme == "/") {
+      Token op_token = lexer.Use(Lexer::ID_OP);
+      ASTNode rhs = Parse_Expr1();
+      lhs = ASTNode{op_token, lhs, rhs};
+
+      lhs = Parse_Expr2(lhs);
+    }
+
+    return lhs;
+  }
+  ASTNode Parse_Expr1() {
+    ASTNode lhs = Parse_Term();
+
+    if (lexer.Peek().lexeme == "**") {
+      Token op_token = lexer.Use(Lexer::ID_OP);
+      ASTNode rhs = Parse_Expr1();
+      lhs = ASTNode{op_token, lhs, rhs};
+    }
+
+    return lhs;
+  }
+
+  ASTNode Parse_Expression() { return Parse_Expr3(); }
+
+  // ASTNode Parse_Expression() {
+  //   ASTNode expr_node = Parse_Term();
+
+  //   if (lexer.Peek() == Lexer::ID_OP) {
+  //     Token op_token = lexer.Use();
+  //     ASTNode term2 = Parse_Term();
+  //     expr_node = ASTNode(op_token, expr_node, term2);
+  //   }
+
+  //   return expr_node;
+  // }
 
   ASTNode Parse_StatementVAR() {
     lexer.Use(Lexer::ID_VAR);
@@ -102,13 +128,13 @@ private:
   }
 
   ASTNode Parse_Statement() {
-    int next_token = lexer.Peek();
+    Token next_token = lexer.Peek();
     ASTNode statement_node;
     switch (next_token) {
       case Lexer::ID_VAR:   statement_node = Parse_StatementVAR();   break;
       case Lexer::ID_PRINT: statement_node = Parse_StatementPRINT(); break;
       default:
-        lexer.Error("Unexpected Token");
+        lexer.Error("Unexpected Token: '", next_token.lexeme, "'");
     }
 
     lexer.Use(';');
