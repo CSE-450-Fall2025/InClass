@@ -15,6 +15,12 @@ private:
 
   std::vector<ASTNode> children{};
 
+  template <typename... Ts>
+  void Error(Ts... args) {
+    std::cerr << "ERROR (Line " << token.line_id << "): ";
+    (std::cerr << ... << args) << std::endl;
+  }
+
 public:
   ASTNode() : token(Token{'{', "Statement Block", 0}) { }
   ASTNode(Token token) : token(token) { }
@@ -32,8 +38,9 @@ public:
 
   void DoAssign(int value, SymbolTable & symbols) {
     if (token != Lexer::ID_ID) {
-      std::cerr << "ERROR (line " << token.line_id << "): Cannot assign a value to '"
-                << token.lexeme << "'." << std::endl;
+      Error("Cannot assign a value to '", token.lexeme, "'.");
+      // std::cerr << "ERROR (line " << token.line_id << "): Cannot assign a value to '"
+      //           << token.lexeme << "'." << std::endl;
       exit(1);
     }
 
