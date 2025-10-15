@@ -1,0 +1,14 @@
+<script>
+  async function run_program() {
+    const wasm_file = await fetch('GCD.wasm');
+    const buffer = await wasm_file.arrayBuffer();
+    const module = await WebAssembly.instantiate(buffer);
+    const { GCD } = module.instance.exports;
+
+    const x = 18; const y = 27;
+    const result = GCD(x, y);
+    document.body.innerHTML =
+      `<p>Input1=${x}; Input2=${y}; GCD = ${result}</p>`;
+  }
+  run_program()
+</script>
